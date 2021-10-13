@@ -15,4 +15,7 @@ public interface PersonRepository extends CrudRepository<Person, Integer> {
     @Override
     @Query("select p from Person p join fetch p.role where p.id = :paramId")
     Optional<Person> findById(@Param("paramId") Integer integer);
+
+    @Query("select p from Person p join fetch p.role where p.login = :paramLogin")
+    Optional<Person> findByLogin(@Param("paramLogin") String login);
 }
