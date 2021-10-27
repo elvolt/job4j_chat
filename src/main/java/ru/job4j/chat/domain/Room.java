@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIdentityInfo;
 import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @JsonIdentityInfo(
@@ -22,7 +20,7 @@ public class Room {
     @OneToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST},
             orphanRemoval = true,
             mappedBy = "room")
-    private List<Message> messages = new ArrayList<>();
+    private final Set<Message> messages = new HashSet<>();
 
     public int getId() {
         return id;
@@ -40,12 +38,12 @@ public class Room {
         this.name = name;
     }
 
-    public List<Message> getMessages() {
+    public Set<Message> getMessages() {
         return messages;
     }
 
-    public void setMessages(List<Message> messages) {
-        this.messages = messages;
+    public void setMessages(Set<Message> messages) {
+        this.messages.addAll(messages);
     }
 
     @Override

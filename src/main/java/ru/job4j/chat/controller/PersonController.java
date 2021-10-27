@@ -10,10 +10,12 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.chat.domain.Person;
 import ru.job4j.chat.service.PersonService;
+import ru.job4j.chat.util.PatchService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
@@ -49,8 +51,8 @@ public class PersonController {
         return new ResponseEntity<>(person, HttpStatus.OK);
     }
 
-    @PostMapping("/")
-    public ResponseEntity<Person> create(@RequestBody Person person) {
+    @PostMapping("/sign-up")
+    public void register(@RequestBody Person person) {
         Objects.requireNonNull(person.getName(), "Name mustn't be empty");
         Objects.requireNonNull(person.getLogin(), "Login mustn't be empty");
         Objects.requireNonNull(person.getPassword(), "Password mustn't be empty");
@@ -59,7 +61,8 @@ public class PersonController {
             throw new IllegalArgumentException("Password length must be more than 5 characters.");
         }
 
-        return new ResponseEntity<>(service.save(person), HttpStatus.CREATED);
+        person.setPassword(encoder.encode(person.getPassword()));
+        service.save(person);
     }
 
     @PutMapping("/")
@@ -76,7 +79,25 @@ public class PersonController {
                 HttpStatus.NOT_FOUND, "Person with id " + person.getId() + " is not found."
         ));
 
+        person.setPassword(encoder.encode(person.getPassword()));
         service.save(person);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> patch(@RequestBody Person person)
+            throws InvocationTargetException, IllegalAccessException {
+        Person existingPerson = service.findById(person.getId()).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Person with id " + person.getId() + " is not found."
+                ));
+
+        if (person.getPassword() != null) {
+            person.setPassword(encoder.encode(person.getPassword()));
+        }
+
+        Person patch = (Person) new PatchService<>().getPatch(existingPerson, person);
+        service.save(patch);
         return ResponseEntity.ok().build();
     }
 
@@ -86,16 +107,6 @@ public class PersonController {
         person.setId(id);
         service.delete(person);
         return ResponseEntity.ok().build();
-    }
-
-    @PostMapping("/sign-up")
-    public void register(@RequestBody Person person) {
-        Objects.requireNonNull(person.getName(), "Name mustn't be empty");
-        Objects.requireNonNull(person.getLogin(), "Login mustn't be empty");
-        Objects.requireNonNull(person.getPassword(), "Password mustn't be empty");
-
-        person.setPassword(encoder.encode(person.getPassword()));
-        service.save(person);
     }
 
     @ExceptionHandler(value = {IllegalArgumentException.class})

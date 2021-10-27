@@ -6,7 +6,9 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.chat.domain.Role;
 import ru.job4j.chat.service.RoleService;
+import ru.job4j.chat.util.PatchService;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 import java.util.Objects;
 
@@ -50,6 +52,19 @@ public class RoleController {
         ));
 
         service.save(role);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> patch(@RequestBody Role role)
+            throws InvocationTargetException, IllegalAccessException {
+        Role existingRole = service.findById(role.getId()).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND, "Role with id " + role.getId() + " is not found."
+                ));
+
+        Role patch = (Role) new PatchService<>().getPatch(existingRole, role);
+        service.save(patch);
         return ResponseEntity.ok().build();
     }
 

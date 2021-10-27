@@ -4,9 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -20,7 +18,7 @@ public class Role {
             orphanRemoval = true,
             mappedBy = "role")
     @JsonIgnore
-    private List<Person> persons = new ArrayList<>();
+    private final Set<Person> persons = new HashSet<>();
 
     public int getId() {
         return id;
@@ -38,12 +36,12 @@ public class Role {
         this.authority = authority;
     }
 
-    public List<Person> getPersons() {
+    public Set<Person> getPersons() {
         return persons;
     }
 
-    public void setPersons(List<Person> persons) {
-        this.persons = persons;
+    public void setPersons(Set<Person> persons) {
+        this.persons.addAll(persons);
     }
 
     @Override

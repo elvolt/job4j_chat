@@ -9,10 +9,6 @@ import java.util.Optional;
 
 public interface RoomRepository extends CrudRepository<Room, Integer> {
     @Override
-    @Query("select r from Room r left join fetch r.messages")
-    Iterable<Room> findAll();
-
-    @Override
     @Query("select r from Room r left join fetch r.messages where r.id = :paramId")
     Optional<Room> findById(@Param("paramId") Integer integer);
 }

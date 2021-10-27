@@ -3,9 +3,7 @@ package ru.job4j.chat.domain;
 import com.fasterxml.jackson.annotation.*;
 
 import javax.persistence.*;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 
 @Entity
 @JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
@@ -26,7 +24,7 @@ public class Person {
             orphanRemoval = true,
             mappedBy = "person")
     @JsonIgnore
-    private List<Message> messages = new ArrayList<>();
+    private final Set<Message> messages = new HashSet<>();
 
     public int getId() {
         return id;
@@ -68,12 +66,12 @@ public class Person {
         this.role = role;
     }
 
-    public List<Message> getMessages() {
+    public Set<Message> getMessages() {
         return messages;
     }
 
-    public void setMessages(List<Message> messages) {
-        this.messages = messages;
+    public void setMessages(Set<Message> messages) {
+        this.messages.addAll(messages);
     }
 
     @Override

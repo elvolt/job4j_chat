@@ -30,4 +30,8 @@ public class RoomService {
     public void delete(Room room) {
         repository.delete(room);
     }
+
+    public void patch(Room room) {
+        save(room);
+    }
 }

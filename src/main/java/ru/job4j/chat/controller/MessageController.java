@@ -1,5 +1,7 @@
 package ru.job4j.chat.controller;
 
+import org.modelmapper.ModelMapper;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -7,13 +9,17 @@ import org.springframework.web.server.ResponseStatusException;
 import ru.job4j.chat.domain.Message;
 import ru.job4j.chat.domain.Person;
 import ru.job4j.chat.domain.Room;
+import ru.job4j.chat.dto.MessageDto;
 import ru.job4j.chat.service.MessageService;
 import ru.job4j.chat.service.PersonService;
 import ru.job4j.chat.service.RoomService;
+import ru.job4j.chat.util.PatchService;
 
+import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Objects;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/message")
@@ -21,77 +27,82 @@ public class MessageController {
     private final MessageService messageService;
     private final RoomService roomService;
     private final PersonService personService;
+    private final ModelMapper modelMapper;
 
     public MessageController(MessageService messageService, RoomService roomService,
-                             PersonService personService) {
+                             PersonService personService, ModelMapper modelMapper) {
         this.messageService = messageService;
         this.roomService = roomService;
         this.personService = personService;
+        this.modelMapper = modelMapper;
     }
 
     @GetMapping("/")
-    public List<Message> findAll() {
-        return messageService.findAll();
+    public List<MessageDto> findAll() {
+        return messageService.findAll()
+                .stream()
+                .map(this::convertToDto)
+                .collect(Collectors.toList());
     }
 
     @GetMapping("/{id}")
-    public ResponseEntity<Message> findById(@PathVariable int id) {
+    public ResponseEntity<MessageDto> findById(@PathVariable int id) {
         Message message = messageService.findById(id)
                 .orElseThrow(() -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Message with id " + id + " is not found."
                 ));
-        return new ResponseEntity<>(message, HttpStatus.OK);
+        return new ResponseEntity<>(convertToDto(message), HttpStatus.OK);
     }
 
     @PostMapping("/")
-    public ResponseEntity<Message> create(@RequestBody Message message) {
-        Objects.requireNonNull(message.getText(), "Text mustn't be empty");
-        Objects.requireNonNull(message.getRoom(), "Room mustn't be empty");
-        Objects.requireNonNull(message.getPerson(), "Person mustn't be empty");
+    public ResponseEntity<MessageDto> create(@RequestBody MessageDto messageDto) {
+        Objects.requireNonNull(messageDto.getText(), "Text mustn't be empty");
+        if (messageDto.getPersonId() == 0) {
+            throw new NullPointerException("Person's id mustn't be 0");
+        }
+        if (messageDto.getRoomId() == 0) {
+            throw new NullPointerException("Room's id mustn't be 0");
+        }
 
-        Person person = personService.findById(message.getPerson().getId()).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Person with id " + message.getPerson().getId() + " is not found."
-                ));
-        Room room = roomService.findById(message.getRoom().getId()).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Room with id " + message.getRoom().getId() + " is not found."
-                ));
-        message.setPerson(person);
-        message.setRoom(room);
+        Message message = convertToEntity(messageDto);
         message.setCreated(LocalDateTime.now());
 
-        return new ResponseEntity<>(messageService.save(message), HttpStatus.CREATED);
+        return new ResponseEntity<>(convertToDto(messageService.save(message)), HttpStatus.CREATED);
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Message message) {
-        Objects.requireNonNull(message.getText(), "Text mustn't be empty");
-        Objects.requireNonNull(message.getRoom(), "Room mustn't be empty");
-        Objects.requireNonNull(message.getPerson(), "Person mustn't be empty");
+    public ResponseEntity<Void> update(@RequestBody MessageDto messageDto) {
+        Objects.requireNonNull(messageDto.getText(), "Text mustn't be empty");
+        if (messageDto.getPersonId() == 0) {
+            throw new NullPointerException("Person's id mustn't be 0");
+        }
+        if (messageDto.getRoomId() == 0) {
+            throw new NullPointerException("Room's id mustn't be 0");
+        }
+        Message existingMessage = messageService.findById(messageDto.getId()).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Message with id " + messageDto.getId() + " is not found."
+                ));
 
-        Message existingMessage = messageService.findById(message.getId()).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Message with id " + message.getId() + " is not found."
-                ));
-        Person person = personService.findById(message.getPerson().getId()).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Person with id " + message.getPerson().getId() + " is not found."
-                ));
-        Room room = roomService.findById(message.getRoom().getId()).orElseThrow(() ->
-                new ResponseStatusException(
-                        HttpStatus.NOT_FOUND,
-                        "Room with id " + message.getRoom().getId() + " is not found."
-                ));
-        message.setPerson(person);
-        message.setRoom(room);
+        Message message = convertToEntity(messageDto);
         message.setCreated(existingMessage.getCreated());
 
         messageService.save(message);
+        return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/")
+    public ResponseEntity<Void> patch(@RequestBody MessageDto messageDto)
+            throws InvocationTargetException, IllegalAccessException {
+        Message existingMessage = messageService.findById(messageDto.getId()).orElseThrow(() ->
+                new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "Message with id " + messageDto.getId() + " is not found."
+                ));
+        Message message = convertToEntity(messageDto);
+        Message patch = (Message) new PatchService<>().getPatch(existingMessage, message);
+        messageService.save(patch);
         return ResponseEntity.ok().build();
     }
 
@@ -101,5 +112,37 @@ public class MessageController {
         message.setId(id);
         messageService.delete(message);
         return ResponseEntity.ok().build();
+    }
+
+    private MessageDto convertToDto(Message message) {
+        return modelMapper.map(message, MessageDto.class);
+    }
+
+    private Message convertToEntity(MessageDto messageDto) {
+        Message message = modelMapper.map(messageDto, Message.class);
+
+        if (messageDto.getPersonId() == 0) {
+            message.setPerson(null);
+        } else {
+            Person person = personService.findById(messageDto.getPersonId()).orElseThrow(() ->
+                    new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Person with id " + messageDto.getPersonId() + " is not found."
+                    ));
+            message.setPerson(person);
+        }
+
+        if (messageDto.getRoomId() == 0) {
+            message.setRoom(null);
+        } else {
+            Room room = roomService.findById(messageDto.getRoomId()).orElseThrow(() ->
+                    new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "Room with id " + messageDto.getRoomId() + " is not found."
+                    ));
+            message.setRoom(room);
+        }
+
+        return message;
     }
 }
