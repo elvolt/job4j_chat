@@ -14,11 +14,11 @@ import ru.job4j.chat.util.PatchService;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.validation.Valid;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/person")
@@ -52,29 +52,13 @@ public class PersonController {
     }
 
     @PostMapping("/sign-up")
-    public void register(@RequestBody Person person) {
-        Objects.requireNonNull(person.getName(), "Name mustn't be empty");
-        Objects.requireNonNull(person.getLogin(), "Login mustn't be empty");
-        Objects.requireNonNull(person.getPassword(), "Password mustn't be empty");
-
-        if (person.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password length must be more than 5 characters.");
-        }
-
+    public void register(@Valid @RequestBody Person person) {
         person.setPassword(encoder.encode(person.getPassword()));
         service.save(person);
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Person person) {
-        Objects.requireNonNull(person.getName(), "Name mustn't be empty");
-        Objects.requireNonNull(person.getLogin(), "Login mustn't be empty");
-        Objects.requireNonNull(person.getPassword(), "Password mustn't be empty");
-
-        if (person.getPassword().length() < 6) {
-            throw new IllegalArgumentException("Password length must be more than 5 characters.");
-        }
-
+    public ResponseEntity<Void> update(@Valid @RequestBody Person person) {
         service.findById(person.getId()).orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Person with id " + person.getId() + " is not found."
         ));

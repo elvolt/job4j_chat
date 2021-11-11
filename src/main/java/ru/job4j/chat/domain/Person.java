@@ -3,6 +3,8 @@ package ru.job4j.chat.domain;
 import com.fasterxml.jackson.annotation.*;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
+import javax.validation.constraints.Size;
 import java.util.*;
 
 @Entity
@@ -11,8 +13,15 @@ public class Person {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @NotBlank(message = "Name mustn't be empty")
     private String name;
+
+    @NotBlank(message = "Login mustn't be empty")
     private String login;
+
+    @NotBlank(message = "Password mustn't be empty")
+    @Size(min = 6, message = "Password length must be more than 5 characters")
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String password;
 

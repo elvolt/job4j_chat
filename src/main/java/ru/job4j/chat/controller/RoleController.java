@@ -8,9 +8,9 @@ import ru.job4j.chat.domain.Role;
 import ru.job4j.chat.service.RoleService;
 import ru.job4j.chat.util.PatchService;
 
+import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Objects;
 
 @RestController
 @RequestMapping("/role")
@@ -37,16 +37,12 @@ public class RoleController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Role> create(@RequestBody Role role) {
-        Objects.requireNonNull(role.getAuthority(), "Authority mustn't be empty");
-
+    public ResponseEntity<Role> create(@Valid @RequestBody Role role) {
         return new ResponseEntity<>(service.save(role), HttpStatus.CREATED);
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Role role) {
-        Objects.requireNonNull(role.getAuthority(), "Authority mustn't be empty");
-
+    public ResponseEntity<Void> update(@Valid @RequestBody Role role) {
         service.findById(role.getId()).orElseThrow(() -> new ResponseStatusException(
                 HttpStatus.NOT_FOUND, "Role with id " + role.getId() + " is not found."
         ));

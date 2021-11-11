@@ -10,9 +10,9 @@ import ru.job4j.chat.dto.RoomDto;
 import ru.job4j.chat.service.RoomService;
 import ru.job4j.chat.util.PatchService;
 
+import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -45,16 +45,12 @@ public class RoomController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<Room> create(@RequestBody Room room) {
-        Objects.requireNonNull(room.getName(), "Name mustn't be empty");
-
+    public ResponseEntity<Room> create(@Valid @RequestBody Room room) {
         return new ResponseEntity<>(service.save(room), HttpStatus.CREATED);
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody Room room) {
-        Objects.requireNonNull(room.getName(), "Name mustn't be empty");
-
+    public ResponseEntity<Void> update(@Valid @RequestBody Room room) {
         Room existingRoom = service.findById(room.getId()).orElseThrow(
                 () -> new ResponseStatusException(
                         HttpStatus.NOT_FOUND, "Room with id " + room.getId() + " is not found."

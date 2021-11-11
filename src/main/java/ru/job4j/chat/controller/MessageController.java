@@ -1,7 +1,6 @@
 package ru.job4j.chat.controller;
 
 import org.modelmapper.ModelMapper;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -15,10 +14,10 @@ import ru.job4j.chat.service.PersonService;
 import ru.job4j.chat.service.RoomService;
 import ru.job4j.chat.util.PatchService;
 
+import javax.validation.Valid;
 import java.lang.reflect.InvocationTargetException;
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Objects;
 import java.util.stream.Collectors;
 
 @RestController
@@ -55,15 +54,7 @@ public class MessageController {
     }
 
     @PostMapping("/")
-    public ResponseEntity<MessageDto> create(@RequestBody MessageDto messageDto) {
-        Objects.requireNonNull(messageDto.getText(), "Text mustn't be empty");
-        if (messageDto.getPersonId() == 0) {
-            throw new NullPointerException("Person's id mustn't be 0");
-        }
-        if (messageDto.getRoomId() == 0) {
-            throw new NullPointerException("Room's id mustn't be 0");
-        }
-
+    public ResponseEntity<MessageDto> create(@Valid @RequestBody MessageDto messageDto) {
         Message message = convertToEntity(messageDto);
         message.setCreated(LocalDateTime.now());
 
@@ -71,14 +62,7 @@ public class MessageController {
     }
 
     @PutMapping("/")
-    public ResponseEntity<Void> update(@RequestBody MessageDto messageDto) {
-        Objects.requireNonNull(messageDto.getText(), "Text mustn't be empty");
-        if (messageDto.getPersonId() == 0) {
-            throw new NullPointerException("Person's id mustn't be 0");
-        }
-        if (messageDto.getRoomId() == 0) {
-            throw new NullPointerException("Room's id mustn't be 0");
-        }
+    public ResponseEntity<Void> update(@Valid @RequestBody MessageDto messageDto) {
         Message existingMessage = messageService.findById(messageDto.getId()).orElseThrow(() ->
                 new ResponseStatusException(
                         HttpStatus.NOT_FOUND,

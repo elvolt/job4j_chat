@@ -4,6 +4,7 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 
 import javax.persistence.*;
+import javax.validation.constraints.NotBlank;
 import java.util.*;
 
 @Entity
@@ -12,6 +13,8 @@ public class Role {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private int id;
+
+    @NotBlank(message = "Authority mustn't be empty")
     private String authority;
 
     @OneToMany(cascade = {CascadeType.MERGE, CascadeType.PERSIST},
