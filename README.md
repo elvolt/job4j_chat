@@ -1,16 +1,22 @@
 # job4j_chat
-
 [![Build Status](https://app.travis-ci.com/elvolt/job4j_chat.svg?branch=master)](https://app.travis-ci.com/elvolt/job4j_chat)
-
 ## О проекте
 Проект представляет собой REST API чата с комнатами.
 
 ### Используемые технологии
 - Spring (Boot, Data JPA, Web, Security (JWT))
-- PostgreSQL
+- PostgreSQL, Liquibase
 - Maven
 - Jackson
 - ModelMapper
+
+### Запуск с Docker Compose
+1. Установите и запустите [Docker Compose](https://docs.docker.com/compose/install/) 
+   или [Docker Desktop](https://docs.docker.com/desktop/windows/install/)
+2. Склонируйте этот репозиторий
+3. Создайте image выполнив `mvn clean install && docker build -t chat .` из корня проекта    
+4. Запустите контейнеры с помощью команды `docker-compose up`
+5. Проверьте работоспособность
 
 ## REST API
 
